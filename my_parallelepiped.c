@@ -3,7 +3,7 @@
 #include "my_tools.c"
 
 int my_parallelepiped(int x, int y, int z);
-void horizontal_line(int x, int y, int number);
+void horizontal_line(int x);
 void vertical_lines(int x, int y, int z);
 void depth_line(int x, int y, int z, int i);
 void make_spaces(int i);
@@ -14,7 +14,7 @@ int my_parallelepiped(int x, int y, int z)
   if (x > 0 && y > 0 && z > 0) {
     if (z > 1) {
       make_spaces(z - 1);
-      horizontal_line(x, y, 1);
+      horizontal_line(x);
       my_putchar('\n');
       if (z > 2) {
         for (int i = z; i > 2; i--) {
@@ -25,7 +25,7 @@ int my_parallelepiped(int x, int y, int z)
       }
     }
     if (x > 0) {
-      horizontal_line(x, y, 2);
+      horizontal_line(x);
       if (y == z && x > 1 && z > 1) {
         make_spaces(z - 2);
         my_putchar('*');
@@ -42,14 +42,15 @@ int my_parallelepiped(int x, int y, int z)
     if (y > 1 && x > 0) {
       my_putchar('\n');
       vertical_lines(x, y, z);
-      horizontal_line(x, y, 3);
+      horizontal_line(x);
     }
+    return (0);
   }
   else
     return (-1);
 }
 
-void horizontal_line(int x, int y, int number)
+void horizontal_line(int x)
 {
   if (x != 0)
     my_putchar('*');
@@ -123,7 +124,7 @@ void make_spaces(int i)
   }
 }
 
-int main(int argc, char **argv)
+int main()
 {
   for (int i = 0, x_input = 0, y_input = 0, z_input = 0; i != 1; z_input++) {
     printf("\ninsert the x_input :\n");
