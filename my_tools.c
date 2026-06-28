@@ -1,7 +1,5 @@
 #include <unistd.h>
-
-void my_putchar(char c);
-void my_putstr(const char *str);
+#include "my_tools.h"
 
 void my_putchar(char c)
 {

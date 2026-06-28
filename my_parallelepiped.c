@@ -1,6 +1,10 @@
 #include <unistd.h>
 #include <stdio.h>
-#include "my_tools.c"
+#include <stdlib.h>
+#include <string.h>
+#include <errno.h>
+#include <limits.h>
+#include "my_tools.h"
 
 int my_parallelepiped(int x, int y, int z);
 void horizontal_line(int x);
@@ -124,20 +128,93 @@ void make_spaces(int i)
   }
 }
 
-int main()
+enum { READ_OK, READ_QUIT, READ_BAD };
+
+static void usage(FILE *stream, const char *prog)
 {
-  for (int i = 0, x_input = 0, y_input = 0, z_input = 0; i != 1; z_input++) {
-    printf("\ninsert the x_input :\n");
-    scanf("%d", &x_input);
-    printf("insert the y_input :\n");
-    scanf("%d", &y_input);
-    printf("insert the z_input :\n");
-    scanf("%d", &z_input);
-    printf("\033[H\033[2J");
-    printf("x_input :%d\n", x_input);
-    printf("y_input :%d\n", y_input);
-    printf("z_input :%d\n\n", z_input);
-    my_parallelepiped(x_input, y_input, z_input);
-    printf("\n");
+  fprintf(stream, "Usage: %s [X Y Z]\n", prog);
+  fprintf(stream, "  Draw an ASCII isometric box of width X, height Y, depth Z.\n");
+  fprintf(stream, "  X, Y and Z must be positive integers.\n");
+  fprintf(stream, "  With no arguments, run in interactive mode (one line per dimension,\n");
+  fprintf(stream, "  empty line or 'q' to quit).\n");
+}
+
+static int parse_positive(const char *s, int *out)
+{
+  char *end;
+  long v;
+
+  errno = 0;
+  v = strtol(s, &end, 10);
+  while (*end == ' ' || *end == '\t' || *end == '\n')
+    end++;
+  if (end == s || *end != '\0' || errno != 0 || v <= 0 || v > INT_MAX)
+    return -1;
+  *out = (int)v;
+  return 0;
+}
+
+static int read_dim(const char *name, int *out)
+{
+  char line[64];
+
+  printf("%s: ", name);
+  fflush(stdout);
+  if (fgets(line, sizeof(line), stdin) == NULL)
+    return READ_QUIT;
+  if (line[0] == '\n' || line[0] == 'q')
+    return READ_QUIT;
+  if (parse_positive(line, out) != 0)
+    return READ_BAD;
+  return READ_OK;
+}
+
+static int interactive(void)
+{
+  int x = 0, y = 0, z = 0;
+
+  for (;;) {
+    int rx = read_dim("width  (x)", &x);
+    if (rx == READ_QUIT)
+      break;
+    int ry = (rx == READ_OK) ? read_dim("height (y)", &y) : READ_BAD;
+    if (ry == READ_QUIT)
+      break;
+    int rz = (ry == READ_OK) ? read_dim("depth  (z)", &z) : READ_BAD;
+    if (rz == READ_QUIT)
+      break;
+    if (rx == READ_BAD || ry == READ_BAD || rz == READ_BAD) {
+      fprintf(stderr, "Please enter a positive integer for each dimension.\n");
+      continue;
+    }
+    my_parallelepiped(x, y, z);
+    my_putchar('\n');
   }
+  return 0;
+}
+
+int main(int argc, char **argv)
+{
+  int x, y, z;
+
+  if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)) {
+    usage(stdout, argv[0]);
+    return 0;
+  }
+  if (argc == 4) {
+    if (parse_positive(argv[1], &x) != 0 ||
+        parse_positive(argv[2], &y) != 0 ||
+        parse_positive(argv[3], &z) != 0) {
+      usage(stderr, argv[0]);
+      return 1;
+    }
+    my_parallelepiped(x, y, z);
+    my_putchar('\n');
+    return 0;
+  }
+  if (argc != 1) {
+    usage(stderr, argv[0]);
+    return 1;
+  }
+  return interactive();
 }
